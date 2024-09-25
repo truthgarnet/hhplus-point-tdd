@@ -1,20 +1,29 @@
 package io.hhplus.tdd.integration;
 
+import io.hhplus.tdd.database.PointHistoryTable;
+import io.hhplus.tdd.database.UserPointTable;
 import io.hhplus.tdd.point.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
 
 @SpringBootTest
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class PointTest {
+
+
+    @Autowired
+    private PointHistoryTable pointHistoryTable;
+
+    @Autowired
+    private UserPointTable userPointTable;
 
     @Autowired
     private PointServiceImpl pointService;
@@ -24,13 +33,18 @@ public class PointTest {
     void return_ifExistsPointHistory() {
         // given: 포인트 내역을 생성
         long current = System.currentTimeMillis();
-        PointHistory pointHistory1 = new PointHistory(1L, 1000L, 1000, TransactionType.CHARGE, current);
-        PointHistory pointHistory2 = new PointHistory(1L, 2000L, 2000, TransactionType.CHARGE, current + 10L);
+        PointHistory pointHistory1 = new PointHistory(1L, 1L, 1000L, TransactionType.CHARGE, current);
+        PointHistory pointHistory2 = new PointHistory(2L, 1L, 2000L, TransactionType.CHARGE, current);
+
+        pointHistoryTable.insert(1L, 1000L, TransactionType.CHARGE, current);
+        userPointTable.insertOrUpdate(1L, 1000L);
+
+        pointHistoryTable.insert(1L, 2000L, TransactionType.CHARGE, current);
+        userPointTable.insertOrUpdate(1L, 2000L);
+
         List<PointHistory> expectedList = Arrays.asList(pointHistory1, pointHistory2);
 
         // when
-        when(pointService.getPointHistories(1L)).thenReturn(expectedList);
-
         List<PointHistory> actualList = pointService.getPointHistories(1L);
 
         // then
